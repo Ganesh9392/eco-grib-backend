@@ -1,0 +1,10 @@
+{
+    "model": "RandomForestRegressor",
+    "trained_at": "2026-07-18T16:44:49.935818",
+    "training_rows": 2400,
+    "testing_rows": 600,
+    "mae": 2.642,
+    "mse": 15.703,
+    "rmse": 3.963,
+    "r2_score": 0.989
+}
