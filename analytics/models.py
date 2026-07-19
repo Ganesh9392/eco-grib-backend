@@ -2,8 +2,10 @@ from django.db import models
 
 from buildings.models import Building
 
+from users.models import TimeStampedModel
 
-class EnergyRecord(models.Model):
+
+class EnergyRecord(TimeStampedModel):
     """
     One row = how much energy one building used on one day.
     This simple daily table is enough to power all the analytics charts

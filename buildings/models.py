@@ -1,8 +1,9 @@
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
+from users.models import TimeStampedModel
 
 
-class Building(models.Model):
+class Building(TimeStampedModel):
     """A physical building/site (matches the frontend's Building type)."""
 
     class Status(models.TextChoices):
@@ -32,7 +33,7 @@ class Building(models.Model):
         return round(total_w / 1000, 2)
 
 
-class Fixture(models.Model):
+class Fixture(TimeStampedModel):
     """
     A single light fixture that can be turned on/off and dimmed.
     This is the model behind the "Brightness Control" / Lighting page.

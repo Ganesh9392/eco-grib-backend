@@ -2,7 +2,30 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models
 
 
-class User(AbstractUser):
+from django.db import models
+
+
+class TimeStampedModel(models.Model):
+    """
+    Abstract base model that provides timestamp fields
+    for all inheriting models.
+    """
+
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        db_index=True,
+        help_text="Record creation timestamp."
+    )
+
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        help_text="Last updated timestamp."
+    )
+
+    class Meta:
+        abstract = True
+
+class User(AbstractUser, TimeStampedModel):
     """
     Our own user, based on Django's built-in User.
 

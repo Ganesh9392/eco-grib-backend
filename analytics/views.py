@@ -7,6 +7,7 @@ from buildings.models import Building, Fixture
 
 from .models import EnergyRecord
 from .serializers import EnergyRecordSerializer
+from django.db.models.functions import ExtractHour, ExtractMonth
 
 
 @api_view(["GET"])
@@ -90,3 +91,91 @@ def by_building(request):
         for row in qs
     ]
     return Response(data)
+
+
+from rest_framework.views import APIView
+class DailyEnergyAPIView(APIView):
+
+    def get(self, request):
+
+        records = (
+            EnergyRecord.objects
+            .order_by("date")
+            .values("date", "kwh_used")
+        )
+
+        data = [
+            {
+                "hour": r["date"].strftime("%d %b"),
+                "kwh": r["kwh_used"],
+            }
+            for r in records
+        ]
+
+        return Response(data)
+
+class MonthlyEnergyAPIView(APIView):
+
+    def get(self, request):
+
+        queryset = (
+            EnergyRecord.objects
+            .annotate(month=ExtractMonth("date"))
+            .values("month")
+            .annotate(
+                usage=Sum("kwh_used"),
+                saved=Sum("kwh_saved"),
+            )
+            .order_by("month")
+        )
+
+        months = [
+            "",
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun",
+            "Jul",
+            "Aug",
+            "Sep",
+            "Oct",
+            "Nov",
+            "Dec",
+        ]
+
+        data = [
+            {
+                "month": months[item["month"]],
+                "usage": item["usage"],
+                "saved": item["saved"],
+            }
+            for item in queryset
+        ]
+
+        return Response(data)
+    
+
+class BuildingComparisonAPIView(APIView):
+
+    def get(self, request):
+
+        queryset = (
+            Building.objects
+            .annotate(
+                usage=Sum("energy_records__kwh_used"),
+                saved=Sum("energy_records__kwh_saved"),
+            )
+        )
+
+        data = [
+            {
+                "name": building.name,
+                "usage": building.usage or 0,
+                "saved": building.saved or 0,
+            }
+            for building in queryset
+        ]
+
+        return Response(data)
