@@ -83,3 +83,5 @@ dist/
 # Cache
 # ==========================
 .cache/
+
+migrations/
