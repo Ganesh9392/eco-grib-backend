@@ -10,6 +10,7 @@ class Building(TimeStampedModel):
         ONLINE = "online", "Online"
         OFFLINE = "offline", "Offline"
 
+    building_id = models.CharField(max_length=50, unique=True, help_text="Unique ID for this building/site")
     name = models.CharField(max_length=150)
     address = models.CharField(max_length=200, blank=True)
     city = models.CharField(max_length=100, blank=True)
@@ -32,6 +33,17 @@ class Building(TimeStampedModel):
         total_w = sum(f.power_w for f in self.fixtures.filter(is_on=True))
         return round(total_w / 1000, 2)
 
+    def save(self, *args, **kwargs):
+        if self.building_id is None or self.building_id == "":
+            # Auto-generate a building_id if not provided
+            last_building = Building.objects.order_by("-id").first()
+            if last_building:
+                last_id_num = int(last_building.building_id.replace("BLD", ""))
+                self.building_id = f"BLD{last_id_num + 1:03d}"
+            else:
+                self.building_id = "BLD001"
+        super().save(*args, **kwargs)             
+
 
 class Fixture(TimeStampedModel):
     """
@@ -50,7 +62,10 @@ class Fixture(TimeStampedModel):
 
     name = models.CharField(max_length=150)
     building = models.ForeignKey(Building, on_delete=models.CASCADE, related_name="fixtures")
-    room_name = models.CharField(max_length=150, blank=True, help_text="Simple room/location label")
+    room_name = models.CharField(max_length=150, blank=True, null=True, help_text="Simple room/location label")
+    room_id = models.CharField(max_length=50, null=True, blank=True, help_text="Optional room/location ID for grouping fixtures")
+    motion = models.BooleanField(null=True, blank=True, default=False, help_text="Whether motion is currently detected in this fixture's room")
+    ambientLux = models.FloatField(null=True, blank=True, default=0, help_text="Current ambient light level in lux")
 
     is_on = models.BooleanField(default=False)
     brightness = models.PositiveIntegerField(

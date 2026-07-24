@@ -33,38 +33,67 @@ class FixtureSerializer(serializers.ModelSerializer):
     currentA = serializers.FloatField(source="current_a")
     operatingHours = serializers.IntegerField(source="operating_hours")
 
+    # NEW
+    ambientLux = serializers.FloatField(source="ambient_lux")
+    recommendedBrightness = serializers.IntegerField(
+        source="recommended_brightness"
+    )
+
     class Meta:
         model = Fixture
         fields = [
             "id",
+            "device_id",                 # NEW
             "name",
             "building",
             "buildingName",
             "roomName",
+
+            "motion",                    # NEW
+            "ambientLux",                # NEW
+
             "isOn",
             "brightness",
+            "recommendedBrightness",     # NEW
+
             "powerW",
             "voltageV",
             "currentA",
             "operatingHours",
+
             "health",
             "firmware",
             "status",
+
+            "last_seen",                 # NEW
+
             "updated_at",
         ]
-        read_only_fields = ["updated_at"]
 
+        read_only_fields = [
+            "updated_at",
+            "last_seen",
+        ]
 
 class FixtureControlSerializer(serializers.Serializer):
-    """
-    Small serializer just for the brightness-control endpoint.
-    Only accepts the two fields you're actually allowed to change remotely.
-    """
 
     is_on = serializers.BooleanField(required=False)
-    brightness = serializers.IntegerField(required=False, min_value=0, max_value=100)
+
+    brightness = serializers.IntegerField(
+        required=False,
+        min_value=0,
+        max_value=100
+    )
+
+    recommended_brightness = serializers.IntegerField(
+        required=False,
+        min_value=0,
+        max_value=100
+    )
 
     def validate(self, data):
         if not data:
-            raise serializers.ValidationError("Provide at least 'is_on' or 'brightness'.")
+            raise serializers.ValidationError(
+                "Provide at least one field."
+            )
         return data
