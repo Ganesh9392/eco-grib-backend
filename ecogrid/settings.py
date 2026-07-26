@@ -24,7 +24,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # --- Security -----------------------------------------------------------
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "dev-secret-key-change-me")
 # DEBUG = os.getenv("DJANGO_DEBUG", "True") == "True"
-DEBUG = False
+DEBUG = True
 # ALLOWED_HOSTS = os.getenv("DJANGO_ALLOWED_HOSTS", "*").split(",")
 ALLOWED_HOSTS = [
     "13.50.243.95",
@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     "buildings",
     "analytics",
     "ai",
+    "iot",
 ]
 
 MIDDLEWARE = [
@@ -103,7 +104,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 # --- i18n -------------------------------------------------------------
 LANGUAGE_CODE = "en-us"
-TIME_ZONE = "UTC"
+TIME_ZONE = "Asia/Kolkata"
 USE_I18N = True
 USE_TZ = True
 
@@ -135,3 +136,18 @@ CORS_ALLOW_ALL_ORIGINS = True
 #     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
 #     "PAGE_SIZE": 50,
 # }
+
+
+
+# ================= AWS IoT ===================
+
+AWS_IOT_ENDPOINT = "a36l1k3v5e2fzy-ats.iot.eu-north-1.amazonaws.com"
+
+# AWS_IOT_CLIENT_ID = "ecogrid-backend"
+AWS_IOT_CLIENT_ID = "listener-client"
+
+AWS_IOT_ROOT_CA = BASE_DIR / "certificates" / "AmazonRootCA1.pem"
+
+AWS_IOT_CERTIFICATE = BASE_DIR / "certificates" / "ecogrid-main-controller.cert.pem"
+
+AWS_IOT_PRIVATE_KEY = BASE_DIR / "certificates" / "ecogrid-main-controller.private.key"

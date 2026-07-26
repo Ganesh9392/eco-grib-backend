@@ -51,6 +51,8 @@ class User(AbstractUser, TimeStampedModel):
         blank=True,
         related_name="users",
     )
+    email = models.EmailField(unique=True, help_text="User's email address (used for login)", null=True, blank=True)
+    phone_number = models.CharField(max_length=20, help_text="User's phone number (optional)", null=True, blank=True)
 
     def __str__(self):
         return f"{self.get_full_name() or self.username} ({self.role})"

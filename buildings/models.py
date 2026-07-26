@@ -1,6 +1,6 @@
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
-from users.models import TimeStampedModel
+from users.models import TimeStampedModel, User
 
 
 class Building(TimeStampedModel):
@@ -10,14 +10,15 @@ class Building(TimeStampedModel):
         ONLINE = "online", "Online"
         OFFLINE = "offline", "Offline"
 
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name="buildings")
     building_id = models.CharField(max_length=50, unique=True, help_text="Unique ID for this building/site")
     name = models.CharField(max_length=150)
     address = models.CharField(max_length=200, blank=True)
     city = models.CharField(max_length=100, blank=True)
-    floors = models.PositiveIntegerField(default=0)
-    rooms = models.PositiveIntegerField(default=0)
-    status = models.CharField(max_length=10, choices=Status.choices, default=Status.ONLINE)
-    occupancy_rate = models.FloatField(default=0)  # 0.0 - 1.0
+    floors = models.PositiveIntegerField(default=0, null=True, blank=True)
+    rooms = models.PositiveIntegerField(default=0, null=True, blank=True)
+    status = models.CharField(max_length=10, choices=Status.choices, default=Status.ONLINE, null=True, blank=True)
+    occupancy_rate = models.FloatField(default=0,null=True, blank=True)  # 0.0 - 1.0
 
     def __str__(self):
         return self.name
@@ -61,29 +62,93 @@ class Fixture(TimeStampedModel):
         OFFLINE = "offline", "Offline"
 
     name = models.CharField(max_length=150)
+    device_id = models.CharField(
+        max_length=100,
+        unique=True,
+        help_text="Unique ESP32 / Controller ID",
+        null=True,
+        blank=True
+    )
     building = models.ForeignKey(Building, on_delete=models.CASCADE, related_name="fixtures")
     room_name = models.CharField(max_length=150, blank=True, null=True, help_text="Simple room/location label")
     room_id = models.CharField(max_length=50, null=True, blank=True, help_text="Optional room/location ID for grouping fixtures")
     motion = models.BooleanField(null=True, blank=True, default=False, help_text="Whether motion is currently detected in this fixture's room")
-    ambientLux = models.FloatField(null=True, blank=True, default=0, help_text="Current ambient light level in lux")
+    ambient_lux = models.FloatField(null=True, blank=True, default=0, help_text="Current ambient light level in lux")
 
     is_on = models.BooleanField(default=False)
     brightness = models.PositiveIntegerField(
         default=0,
         validators=[MinValueValidator(0), MaxValueValidator(100)],
         help_text="0-100 %",
+        null=True,
+        blank=True
     )
 
-    power_w = models.FloatField(default=0)
-    voltage_v = models.FloatField(default=0)
-    current_a = models.FloatField(default=0)
-    operating_hours = models.PositiveIntegerField(default=0)
+    power_w = models.FloatField(default=0, null=True, blank=True)
+    voltage_v = models.FloatField(default=0, null=True, blank=True)
+    current_a = models.FloatField(default=0, null=True, blank=True)
+    operating_hours = models.PositiveIntegerField(default=0, null=True, blank=True)
 
-    health = models.CharField(max_length=10, choices=Health.choices, default=Health.HEALTHY)
-    firmware = models.CharField(max_length=30, blank=True)
-    status = models.CharField(max_length=10, choices=Status.choices, default=Status.ONLINE)
+    health = models.CharField(max_length=10, choices=Health.choices, default=Health.HEALTHY, null=True, blank=True)
+    firmware = models.CharField(max_length=30, null=True, blank=True)
+    status = models.CharField(max_length=10, choices=Status.choices, default=Status.ONLINE, null=True, blank=True)
 
-    updated_at = models.DateTimeField(auto_now=True)
+    updated_at = models.DateTimeField(auto_now=True, null=True, blank=True)
 
     def __str__(self):
         return f"{self.name} ({self.building.name})"
+
+
+class SensorReading(TimeStampedModel):
+    """
+    Stores every sensor message received from AWS IoT Core.
+
+    One MQTT message = One SensorReading record.
+    This table is used for:
+    - AI model training
+    - Historical analytics
+    - Energy reports
+    - Occupancy analysis
+    """
+
+    fixture = models.ForeignKey(
+        Fixture,
+        on_delete=models.CASCADE,
+        related_name="sensor_readings"
+    )
+
+    device_id = models.CharField(
+        max_length=100,
+        unique=True,
+        help_text="Unique ESP32 / Controller ID",
+        null=True,
+        blank=True
+    )
+
+    motion = models.BooleanField(default=False)
+
+    ambient_lux = models.FloatField(
+        help_text="Ambient light level in Lux"
+    )
+
+    current_brightness = models.PositiveIntegerField(
+        help_text="Current LED brightness (0-100%)"
+    )
+
+    reading_time = models.DateTimeField(
+        help_text="Timestamp sent by the ESP32"
+    )
+
+    class Meta:
+        ordering = ["-reading_time"]
+        indexes = [
+            models.Index(fields=["reading_time"]),
+            models.Index(fields=["fixture"]),
+        ]
+
+    def __str__(self):
+        return (
+            f"{self.fixture.name} | "
+            f"{self.current_brightness}% | "
+            f"{self.reading_time}"
+        )
