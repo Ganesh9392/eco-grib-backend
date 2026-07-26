@@ -49,13 +49,6 @@ from .services import save_sensor_reading
 
 
 def handle_sensor_message(topic, payload):
-    """
-    Handles incoming MQTT sensor messages.
-    Supports:
-    - Single JSON object
-    - List of JSON objects
-    """
-
     try:
         if isinstance(payload, bytes):
             payload = payload.decode("utf-8")
@@ -65,39 +58,22 @@ def handle_sensor_message(topic, payload):
         print("\n" + "=" * 70)
         print("MQTT SENSOR MESSAGE RECEIVED")
         print("=" * 70)
-        print(f"Topic   : {topic}")
-        print(f"Payload : {json.dumps(data, indent=4)}")
-        print("=" * 70)
 
-        # If a list of sensor readings is received
+        # If payload is a list
         if isinstance(data, list):
-
-            print(f"\nReceived {len(data)} sensor readings.\n")
-
-            success = 0
+            print(f"Received {len(data)} sensor readings")
 
             for reading in data:
-                try:
-                    sensor = save_sensor_reading(reading)
-                    success += 1
-                    print(
-                        f"Saved Device {reading['deviceId']} -> ID {sensor.id}"
-                    )
-                except Exception as e:
-                    print(
-                        f"Failed Device {reading.get('deviceId')} : {e}"
-                    )
+                sensor = save_sensor_reading(reading)
+                print(f"Saved: {sensor.id}")
 
-            print(f"\nSuccessfully saved {success}/{len(data)} readings.\n")
-
+        # If payload is a single object
         else:
             sensor = save_sensor_reading(data)
-
-            print("\nSensor reading saved successfully.")
-            print(f"Database ID : {sensor.id}\n")
+            print(f"Saved: {sensor.id}")
 
     except json.JSONDecodeError:
-        print("\nInvalid JSON received.\n")
+        print("Invalid JSON")
 
     except Exception as e:
-        print(f"\nHandler Error: {e}\n")
+        print(f"Handler Error: {e}")
