@@ -85,3 +85,16 @@ dist/
 .cache/
 
 migrations/
+
+# AWS IoT Certificates
+certificates/
+*.pem
+*.key
+
+__pycache__/
+*.pyc
+
+ai/saved_models/
+*.pkl
+
+db.sqlite3
