@@ -10,33 +10,83 @@ from .serializers import EnergyRecordSerializer
 from django.db.models.functions import ExtractHour, ExtractMonth
 
 
+# @api_view(["GET"])
+# def summary(request):
+#     """
+#     GET /api/analytics/summary/
+
+#     One combined snapshot for the dashboard/analytics header cards:
+#     totals across all buildings and fixtures, plus energy used/saved.
+#     """
+#     totals = EnergyRecord.objects.aggregate(
+#         total_used=Sum("kwh_used"),
+#         total_saved=Sum("kwh_saved"),
+#         total_co2=Sum("co2_reduced_kg"),
+#     )
+
+#     fixtures = Fixture.objects.all()
+
+#     data = {
+#         "totalBuildings": Building.objects.count(),
+#         "totalFixtures": fixtures.count(),
+#         "onlineFixtures": fixtures.filter(status=Fixture.Status.ONLINE).count(),
+#         "offlineFixtures": fixtures.filter(status=Fixture.Status.OFFLINE).count(),
+#         "energyKwh": round(totals["total_used"] or 0, 2),
+#         "energySavedKwh": round(totals["total_saved"] or 0, 2),
+#         "carbonReducedKg": round(totals["total_co2"] or 0, 2),
+#     }
+#     return Response(data)
+
+from django.db.models import Sum
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+
+from buildings.models import Building, Fixture
+
+
 @api_view(["GET"])
 def summary(request):
-    """
-    GET /api/analytics/summary/
 
-    One combined snapshot for the dashboard/analytics header cards:
-    totals across all buildings and fixtures, plus energy used/saved.
-    """
-    totals = EnergyRecord.objects.aggregate(
-        total_used=Sum("kwh_used"),
-        total_saved=Sum("kwh_saved"),
-        total_co2=Sum("co2_reduced_kg"),
-    )
-
+    buildings = Building.objects.all()
     fixtures = Fixture.objects.all()
 
     data = {
-        "totalBuildings": Building.objects.count(),
-        "totalFixtures": fixtures.count(),
-        "onlineFixtures": fixtures.filter(status=Fixture.Status.ONLINE).count(),
-        "offlineFixtures": fixtures.filter(status=Fixture.Status.OFFLINE).count(),
-        "energyKwh": round(totals["total_used"] or 0, 2),
-        "energySavedKwh": round(totals["total_saved"] or 0, 2),
-        "carbonReducedKg": round(totals["total_co2"] or 0, 2),
-    }
-    return Response(data)
+        "totalBuildings": buildings.count(),
 
+        "totalFloors": buildings.aggregate(
+            total=Sum("floors")
+        )["total"] or 0,
+
+        "totalRooms": buildings.aggregate(
+            total=Sum("rooms")
+        )["total"] or 0,
+
+        "totalFixtures": fixtures.count(),
+
+        "onlineFixtures": fixtures.filter(
+            status=Fixture.Status.ONLINE
+        ).count(),
+
+        "offlineFixtures": fixtures.filter(
+            status=Fixture.Status.OFFLINE
+        ).count(),
+
+        # Not implemented yet
+        "energyKwh": 0,
+        "energySavedKwh": 0,
+        "carbonReducedKg": 0,
+        "activeAlerts": 0,
+
+        "occupiedRooms": fixtures.filter(
+            motion=True
+        ).count(),
+
+        "vacantRooms": fixtures.filter(
+            motion=False
+        ).count(),
+    }
+
+    return Response(data)
 
 @api_view(["GET"])
 def energy_trend(request):
