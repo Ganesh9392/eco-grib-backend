@@ -11,14 +11,17 @@ from .mqtt_client import mqtt_client
 from .topics import SENSOR_TOPIC
 
 
-def _sensor_callback(topic, payload, **kwargs):
+def _sensor_callback(topic, payload, **kwargs): 
     print("\n" + "=" * 60)
     print("MESSAGE RECEIVED")
     print("=" * 60)
     print("Topic:", topic)
     print("Payload:", payload.decode())
     print("=" * 60)
-
+    print(">>>>>>>> CALLBACK HIT <<<<<<<<")
+    print(topic)
+    print(payload)
+    
     handle_sensor_message(topic, payload)
 
 
