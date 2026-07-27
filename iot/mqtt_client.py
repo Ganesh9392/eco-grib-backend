@@ -3,6 +3,27 @@ from awsiot import mqtt_connection_builder
 from django.conf import settings
 
 
+def on_connection_interrupted(connection, error, **kwargs):
+    print("\n========== CONNECTION INTERRUPTED ==========")
+    print(f"Error: {error}")
+    print("============================================\n")
+
+
+def on_connection_resumed(connection, return_code, session_present, **kwargs):
+    print("\n========== CONNECTION RESUMED ==========")
+    print(f"Return Code    : {return_code}")
+    print(f"Session Present: {session_present}")
+
+    if return_code == mqtt.ConnectReturnCode.ACCEPTED and not session_present:
+        print("Session lost. Re-subscribing...")
+
+        connection.resubscribe_existing_topics().result()
+
+        print("Re-subscribed successfully.")
+
+    print("========================================\n")
+
+
 class MQTTClient:
     def __init__(self):
         self.connection = None
@@ -25,12 +46,15 @@ class MQTTClient:
             client_id=settings.AWS_IOT_CLIENT_ID,
             clean_session=True,
             keep_alive_secs=30,
+            on_connection_interrupted=on_connection_interrupted,
+            on_connection_resumed=on_connection_resumed,
         )
 
         print("Connecting to AWS IoT Core...")
         self.connection.connect().result()
 
         self.connected = True
+
         print("Connected successfully.\n")
 
         return self.connection
@@ -42,8 +66,9 @@ class MQTTClient:
         try:
             print("Disconnecting...")
             self.connection.disconnect().result()
+            print("Disconnected.")
         except Exception as e:
-            print(e)
+            print(f"Disconnect Error: {e}")
 
         self.connection = None
         self.connected = False
@@ -58,7 +83,9 @@ class MQTTClient:
         )
 
         future.result()
-        print(f"Published. Packet ID: {packet_id}")
+
+        print(f"Published to '{topic}'")
+        print(f"Packet ID: {packet_id}")
 
     def subscribe(
         self,
@@ -66,7 +93,6 @@ class MQTTClient:
         callback,
         qos=mqtt.QoS.AT_LEAST_ONCE,
     ):
-
         self.connect()
 
         future, packet_id = self.connection.subscribe(
@@ -77,7 +103,11 @@ class MQTTClient:
 
         result = future.result()
 
-        print("Subscription result:", result)
-        print("Packet:", packet_id)
+        print("\n========== SUBSCRIPTION ==========")
+        print(f"Topic     : {topic}")
+        print(f"Packet ID : {packet_id}")
+        print(f"Result    : {result}")
+        print("==================================\n")
+
 
 mqtt_client = MQTTClient()
