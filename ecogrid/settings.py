@@ -145,7 +145,7 @@ CORS_ALLOW_ALL_ORIGINS = True
 AWS_IOT_ENDPOINT = "a36l1k3v5e2fzy-ats.iot.eu-north-1.amazonaws.com"
 
 # AWS_IOT_CLIENT_ID = "ecogrid-backend"
-AWS_IOT_CLIENT_ID = "listener-client"
+AWS_IOT_CLIENT_ID = "ecogrid-backend-listener"
 
 AWS_IOT_ROOT_CA = BASE_DIR / "certificates" / "AmazonRootCA1.pem"
 
